@@ -125,7 +125,7 @@ public extension Localize {
         }
     }
     
-    static func confic(config: LocalizationFetcherConfig, bundle: Bundle = .main) {
+    static func config(_ config: LocalizationFetcherConfig, bundle: Bundle = .main) {
         Bundle.savedBundle = bundle
         config.save()
     }

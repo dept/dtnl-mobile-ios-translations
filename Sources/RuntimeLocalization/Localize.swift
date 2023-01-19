@@ -113,19 +113,15 @@ public extension Localize {
         }
     }
     
-    static func sync(localizeFile: LocalizeProtocol.Type) {
-        guard let version = UserDefaults.standard.object(forKey: LocalizeConstants.Version) as? Int else {
+    static func sync(localizeFile: LocalizeProtocol.Type? = nil, localVersion _localVersion: Int = 1) {
+        let localVersion = localizeFile?.versionNumber ?? _localVersion
+        if VersionHandler.localVersion <= 0 || localVersion > VersionHandler.localVersion {
             saveAllLanguages()
-            VersionHandler.localVersion = localizeFile.versionNumber
-            syncToRemote(version: localizeFile.versionNumber)
+            VersionHandler.localVersion = localVersion
+            syncToRemote(version: localVersion)
             return
-        }
-        if localizeFile.versionNumber > version {
-            saveAllLanguages()
-            VersionHandler.localVersion = localizeFile.versionNumber
-            syncToRemote(version: localizeFile.versionNumber)
         } else {
-            syncToRemote(version: version)
+            syncToRemote(version: localVersion)
         }
     }
     

@@ -1,15 +1,9 @@
-#!/bin/bash
-# Put Your config Here
-LOCALIZE_PATH="./Runtime Translations POC/Localize/Resources/"
-LOCALIZE_API="https://2jy3q.wiremockapi.cloud/translations"
-LOCALIZE_TOKEN="Bearer BKe4qt5KDNzGGVgM"
+LOCALIZE_PATH="$2"
+LOCALIZE_API="$3"
+LOCALIZE_TOKEN="$4"
 
 # Config for Strings struct (Optional to change)
-STRINGS_STRUCT_NAME="Strings"
-
-###################################################
-######### DO NOT CHANGE AFTER THIS LINE ###########
-###################################################
+STRINGS_STRUCT_NAME="$5"
 
 # Sync the translations from remote
 SyncTranslations() {

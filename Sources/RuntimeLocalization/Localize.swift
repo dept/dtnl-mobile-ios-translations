@@ -35,12 +35,12 @@ class BundleFetcher {
 
 public extension Bundle {
     
-    private static var documentsDirectory: URL {
+    fileprivate static var documentsDirectory: URL {
         let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
         return paths[0]
     }
     
-    private static var savedBundle: Bundle {
+    fileprivate static var savedBundle: Bundle {
         get {
             return BundleFetcher.shared.mainBundle
         }

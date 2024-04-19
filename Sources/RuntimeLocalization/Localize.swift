@@ -49,7 +49,7 @@ public extension Bundle {
         }
     }
     
-    static var localizationBundle: Bundle {
+    fileprivate static var localizationBundleGeneric: Bundle {
         if (VersionHandler.localVersion > 0) {
             if let bundle = Bundle(url: documentsDirectory) {
                 return bundle
@@ -57,6 +57,13 @@ public extension Bundle {
             return savedBundle
         }
         return savedBundle
+    }
+    
+    static var localizationBundle: Bundle {
+        let language = Localize.currentLanguage()
+        let path = localizationBundleGeneric.path(forResource: language, ofType: "lproj")!
+        let bundle = Bundle(path: path) ?? localizationBundleGeneric
+        return bundle
     }
     
     
@@ -125,10 +132,8 @@ public extension Localize {
         }
     }
     
-    static func config(_ config: LocalizationFetcherConfig, bundle: Bundle? = nil) {
-        if let bundle = bundle {
-            Bundle.savedBundle = bundle
-        }
+    static func config(_ config: LocalizationFetcherConfig, bundle: Bundle = .main) {
+        Bundle.savedBundle = bundle
         config.save()
     }
 }

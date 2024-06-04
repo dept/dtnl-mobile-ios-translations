@@ -59,14 +59,26 @@ public extension Bundle {
         return savedBundle
     }
     
-    static var localizationBundle: Bundle {
-        let language = Localize.currentLanguage()
-        let path = localizationBundleGeneric.path(forResource: language, ofType: "lproj")!
+    static func localizationBundle(language: String) -> Bundle {
+        let path = localizationBundleGeneric.path(forResource: language, ofType: "lproj") ?? savedBundle.bundlePath
         let bundle = Bundle(path: path) ?? localizationBundleGeneric
         return bundle
     }
     
+    static func localizationFileUrl(language : String) -> URL? {
+        return localizationBundle(language: language).url(forResource: "Localizable", withExtension: "strings")
+    }
     
+    static var localizationBundle: Bundle {
+        let language = Localize.currentLanguage()
+        let path = localizationBundleGeneric.path(forResource: language, ofType: "lproj") ?? savedBundle.bundlePath
+        let bundle = Bundle(path: path) ?? localizationBundleGeneric
+        return bundle
+    }
+    
+    static var localizationFileUrl: URL? {
+        return localizationBundle.url(forResource: "Localizable", withExtension: "strings")
+    }
 }
 
 
@@ -80,14 +92,14 @@ public struct Localize {
 public extension Localize {
     
     private static func updateTranslations(language: String, translations: [String: String]) {
-        if let folderUrl = Bundle.localizationBundle.url(forResource: language, withExtension: "lproj"),
-           let folderBundle = Bundle(url: folderUrl),
-           let fileUrl = folderBundle.url(forResource: "Localizable", withExtension: "strings") {
-            let newData = translations.reduce("", { (result, new) in return result + "\"\(new.key)\"=\"\(new.value)\";\n" })
+        if let fileUrl = Bundle.localizationFileUrl(language: language) {
+           let newData = translations.reduce("", { (result, new) in
+               let escapedValue = new.value.replacingOccurrences(of: "\"", with: "\\\"")
+               return result + "\"\(new.key)\"=\"\(escapedValue)\";\n"
+           })
             do {
-                let encoding = String.Encoding.utf16
-                try newData.write(to: fileUrl, atomically: true, encoding: encoding)
-//                print(try String(contentsOf: fileUrl, encoding: encoding))
+                try newData.write(to: fileUrl, atomically: true, encoding: String.localizeEncoding)
+//                print(try String(contentsOf: fileUrl, encoding: String.localizeEncoding))
             } catch {
                 print(error.localizedDescription)
             }
@@ -122,6 +134,9 @@ public extension Localize {
     
     static func sync(localizeFile: LocalizeProtocol.Type? = nil, localVersion _localVersion: Int = 1) {
         let localVersion = localizeFile?.versionNumber ?? _localVersion
+        if (_localVersion == -1) {
+            VersionHandler.resetVersion()
+        }
         if VersionHandler.localVersion <= 0 || localVersion > VersionHandler.localVersion {
             saveAllLanguages()
             VersionHandler.localVersion = localVersion
@@ -135,6 +150,13 @@ public extension Localize {
     static func config(_ config: LocalizationFetcherConfig, bundle: Bundle = .main) {
         Bundle.savedBundle = bundle
         config.save()
+    }
+    
+    static var localizationFileContent: String {
+        if let fileUrl = Bundle.localizationFileUrl, let content = try? String(contentsOf: fileUrl, encoding: String.localizeEncoding) {
+            return content
+        }
+        return ""
     }
 }
 

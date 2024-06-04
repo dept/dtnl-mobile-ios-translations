@@ -16,6 +16,11 @@ struct VersionHandler {
                                   forKey: LocalizeConstants.VersionTimeout)
     }
     
+    static func resetVersion() {
+        UserDefaults.standard.set(0,
+                                  forKey: LocalizeConstants.VersionTimeout)
+    }
+    
     static var localVersion: Int {
         get {
             UserDefaults.standard.integer(forKey: LocalizeConstants.Version)

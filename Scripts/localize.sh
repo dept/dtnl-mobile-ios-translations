@@ -43,12 +43,11 @@ SyncTranslations() {
         }
 
         # writing the translations to the required files
-        jq 'keys[]' "$JSON_FILE" | while read key ; do
-            jq "."${key}"|keys[]" "$JSON_FILE" | while read lang ; do
-                lang=$(echo "$lang" | tr -d '"')
-                value=$(jq "."$key"."$lang"" "$JSON_FILE")
-                MakeFileForLang $lang
-                echo ""$key" = "$value";" >> "$LOCALIZE_PATH/$lang.lproj/Localizable.strings"
+        jq -r 'keys[]' "$JSON_FILE" | while IFS= read -r key ; do
+            jq -r --arg k "$key" '.[$k] | keys[]' "$JSON_FILE" | while IFS= read -r lang ; do
+                value=$(jq --arg k "$key" --arg l "$lang" '.[$k][$l]' "$JSON_FILE")
+                MakeFileForLang "$lang"
+                echo "\"$key\" = $value;" >> "$LOCALIZE_PATH/$lang.lproj/Localizable.strings"
             done
         done
 
@@ -67,9 +66,9 @@ SyncTranslations() {
         AddLineToStrings "    public static let versionNumber: Int = $current_date"
         AddLineToStrings ""
         # Add all the keys as static parameters to the swift file
-        jq 'keys[]' "$JSON_FILE" | while read key ; do
+        jq -r 'keys[]' "$JSON_FILE" | while IFS= read -r key ; do
             new_name=$(echo "$key" | perl -nE 'say lcfirst join "", map {ucfirst lc} split /[^[:alnum:]]+/')
-            AddLineToStrings "    public static let $new_name = "$key""
+            AddLineToStrings "    public static let $new_name = \"$key\""
         done
         # Close the swift file
         AddLineToStrings "}"

@@ -75,6 +75,28 @@ public extension Bundle {
         let bundle = Bundle(path: path) ?? localizationBundleGeneric
         return bundle
     }
+
+    static func localizedString(forKey key: String, value: String? = nil, table tableName: String? = nil) -> String {
+        let fallbackValue = value ?? key
+        let localizedValue = localizationBundle.localizedString(forKey: key, value: fallbackValue, table: tableName)
+
+        guard localizedValue == fallbackValue,
+              let stringsBundle = stringsLocalizationBundle else {
+            return localizedValue
+        }
+
+        return stringsBundle.localizedString(forKey: key, value: fallbackValue, table: tableName)
+    }
+
+    private static var stringsLocalizationBundle: Bundle? {
+        let language = Localize.currentLanguage()
+        // "Strings/<lang>.lproj" is only ever bundled with the app, never copied into the documents cache
+        guard let path = savedBundle.path(forResource: language, ofType: "lproj", inDirectory: "Strings") else {
+            return nil
+        }
+
+        return Bundle(path: path)
+    }
     
     static var localizationFileUrl: URL? {
         return localizationBundle.url(forResource: "Localizable", withExtension: "strings")

@@ -116,9 +116,14 @@ public extension Localize {
     private static func updateTranslations(language: String, translations: [String: String]) {
         if let fileUrl = Bundle.localizationFileUrl(language: language) {
            let newData = translations.reduce("", { (result, new) in
-               let escapedValue = new.value.replacingOccurrences(of: "\"", with: "\\\"")
-               return result + "\"\(new.key)\"=\"\(escapedValue)\";\n"
+               return result + "\"\(escapeForStringsFile(new.key))\"=\"\(escapeForStringsFile(new.value))\";\n"
            })
+            // A single malformed entry makes the whole .strings file unreadable, so never replace a valid file with it
+            guard let data = newData.data(using: .utf8),
+                  (try? PropertyListSerialization.propertyList(from: data, format: nil)) is [String: String] else {
+                print("RuntimeLocalization: skipped writing invalid strings file for \(language)")
+                return
+            }
             do {
                 try newData.write(to: fileUrl, atomically: true, encoding: String.localizeEncoding)
 //                print(try String(contentsOf: fileUrl, encoding: String.localizeEncoding))
@@ -128,6 +133,24 @@ public extension Localize {
         }
     }
     
+    // Remote values may already contain .strings escapes (e.g. \n, \"), so only escape quotes that aren't escaped yet
+    internal static func escapeForStringsFile(_ value: String) -> String {
+        var result = ""
+        var backslashCount = 0
+        for character in value {
+            if character == "\"" && backslashCount % 2 == 0 {
+                result.append("\\")
+            }
+            backslashCount = character == "\\" ? backslashCount + 1 : 0
+            result.append(character)
+        }
+        // A dangling backslash would escape the closing quote
+        if backslashCount % 2 == 1 {
+            result.append("\\")
+        }
+        return result
+    }
+
     private static func syncToRemote(version: Int) {
         let fetcher = LocalizationFetcher()
         fetcher.shouldUpdate(version: version)

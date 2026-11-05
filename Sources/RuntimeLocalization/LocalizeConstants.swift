@@ -16,6 +16,7 @@ public struct LocalizeConstants {
     
     // Public Constants
     public static let LanguageChangeNotification = "RLLanguageChangeNotification"
+    public static let TranslationsUpdatedNotification = "RLTranslationsUpdatedNotification"
     
 }
 

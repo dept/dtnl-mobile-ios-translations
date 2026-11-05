@@ -195,6 +195,9 @@ public extension Localize {
                         response.translations.forEach {
                             updateTranslations(language: $0, translations: $1)
                         }
+                        DispatchQueue.main.async {
+                            NotificationCenter.default.post(name: Notification.Name(rawValue: LocalizeConstants.TranslationsUpdatedNotification), object: nil)
+                        }
                     }
                 }.store(in: &disposables.cancellables)
             }

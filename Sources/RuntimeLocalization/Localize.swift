@@ -195,7 +195,7 @@ public extension Localize {
                         response.translations.forEach {
                             updateTranslations(language: $0, translations: $1)
                         }
-                        DispatchQueue.main.async {
+                        Task { @MainActor in
                             NotificationCenter.default.post(name: Notification.Name(rawValue: LocalizeConstants.TranslationsUpdatedNotification), object: nil)
                         }
                     }

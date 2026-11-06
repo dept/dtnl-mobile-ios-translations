@@ -76,12 +76,6 @@ public extension Bundle {
         return bundle
     }
 
-    // Bundle.localizedString(forKey:) caches its parsed strings table per bundle
-    // path, so once a downloaded translation file has been read, further reads
-    // from that same path keep serving the stale table even after a newer file
-    // is written there. This cache sidesteps Bundle's caching entirely and
-    // instead validates itself against the file's actual modification date
-    
     private struct CachedStringsTable {
         let modificationDate: Date
         let values: [String: String]

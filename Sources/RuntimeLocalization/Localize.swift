@@ -76,15 +76,42 @@ public extension Bundle {
         return bundle
     }
 
+    private struct CachedStringsTable {
+        let modificationDate: Date
+        let values: [String: String]
+    }
+    private static var stringsCache: [String: CachedStringsTable] = [:]
+
     static func localizedString(forKey key: String, value: String? = nil, table tableName: String? = nil) -> String {
         let fallbackValue = value ?? key
-        let localizedValue = localizationBundle.localizedString(forKey: key, value: fallbackValue, table: tableName)
 
-        guard localizedValue == fallbackValue,
-              let stringsBundle = stringsLocalizationBundle else {
-            return localizedValue
+        guard let url = localizationBundle.url(forResource: tableName ?? "Localizable", withExtension: "strings") else {
+            guard let stringsBundle = stringsLocalizationBundle else {
+                return fallbackValue
+            }
+            return stringsBundle.localizedString(forKey: key, value: fallbackValue, table: tableName)
         }
 
+        let modificationDate = (try? FileManager.default.attributesOfItem(atPath: url.path)[.modificationDate] as? Date) ?? nil
+
+        let table: [String: String]
+        if let cached = stringsCache[url.path], cached.modificationDate == modificationDate {
+            table = cached.values
+        } else if let loaded = NSDictionary(contentsOf: url) as? [String: String] {
+            table = loaded
+            if let modificationDate {
+                stringsCache[url.path] = CachedStringsTable(modificationDate: modificationDate, values: loaded)
+            }
+        } else {
+            table = [:]
+        }
+
+        if let freshValue = table[key] {
+            return freshValue
+        }
+        guard let stringsBundle = stringsLocalizationBundle else {
+            return fallbackValue
+        }
         return stringsBundle.localizedString(forKey: key, value: fallbackValue, table: tableName)
     }
 
@@ -161,6 +188,9 @@ public extension Localize {
                     if response.version > -1 {
                         response.translations.forEach {
                             updateTranslations(language: $0, translations: $1)
+                        }
+                        Task { @MainActor in
+                            NotificationCenter.default.post(name: Notification.Name(rawValue: LocalizeConstants.TranslationsUpdatedNotification), object: nil)
                         }
                     }
                 }.store(in: &disposables.cancellables)
